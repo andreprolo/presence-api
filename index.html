@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="halloween">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Presence App</title>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.13/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body>
+    <script>
+        fetch('http://localhost:3000/presencas_do_dia').then(async (response) => {
+            const result = await response.json()
+            const alunos = result.alunos
+
+            alunos.map((aluno) => {
+                const tr = document.createElement("tr")
+                const td1 = document.createElement("td")
+                const checkbox = document.createElement("input")
+                checkbox.dataset.alunoId = aluno.id
+                checkbox.className = "checkbox checkbox-warning"
+                checkbox.disabled = aluno.presente_hoje
+                checkbox.type = "checkbox"
+                if (aluno.presente_hoje) {
+                    checkbox.checked = "checked"
+                }
+                const td2 = document.createElement("td")
+                td2.innerHTML = aluno.nome
+
+                td1.appendChild(checkbox)
+                tr.appendChild(td1)
+                tr.appendChild(td2)
+
+                document.getElementById("table_content").appendChild(tr)
+            })
+        });
+
+        function handleClick() {
+            let result = confirm("Tem certeza?")
+
+            let presencas = []
+
+            if (result) {
+                Array.from(document.getElementById("table_content").children).map((aluno) => {
+                    let checkbox = aluno.children[0].children[0]
+                    if (!checkbox.disabled && checkbox.checked) {
+                        presencas.push(parseInt(checkbox.dataset.alunoId))
+                    }
+                })
+
+
+                if (presencas.length > 0) {
+                    fetch('http://localhost:3000/marcar_presenca', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({'presencas': presencas})
+                    }).then((_response) => {
+                        location.reload()
+                    });
+                }
+            }
+        }
+    </script>
+
+    <div class="hero bg-base-200 min-h-screen">
+        <div class="hero-content text-center">
+            <div class="max-w-lg">
+                <div class="overflow-x-auto">
+                    <h1 class="text-5xl font-bold">Presence App</h1>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Presença</th>
+                                <th>Nome</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table_content">
+                            <!-- row 1 -->
+                            <!-- <tr>
+                                <td><input type="checkbox" class="checkbox checkbox-warning" disabled
+                                        checked="checked" /></td>
+                                <td>Alan John</td>
+                            </tr> -->
+                        </tbody>
+                    </table>
+                    <button class="btn btn-warning" onclick="handleClick()" alert="Tem certeza?">Marcar Presenças</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
