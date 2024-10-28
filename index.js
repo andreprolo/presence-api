@@ -1,9 +1,10 @@
-const express = require('express')
-const sequelize = require('sequelize')
+const express = require("express")
+const cors = require("cors")
+const sequelize = require("sequelize")
 
 const db = new sequelize.Sequelize({
-    dialect: 'sqlite',
-    storage: './database.sqlite'
+    dialect: "sqlite",
+    storage: "database.sqlite"
 })
 
 const Aluno = db.define(
@@ -23,43 +24,42 @@ const Presenca = db.define(
 Presenca.belongsTo(Aluno)
 
 db.sync().then(async () => {
-    await Aluno.findOrCreate({ where: { nome: 'Alan John' }, defaults: { nome: 'Alan John' } })
-    await Aluno.findOrCreate({ where: { nome: 'Alisson Vitor' }, defaults: { nome: 'Alisson Vitor' } })
+    await Aluno.findOrCreate({ where: {nome: "Alan John"}, defaults: {nome: "Alan John"} })
+    await Aluno.findOrCreate({ where: {nome: "Alisson Vitor"}, defaults: {nome: "Alisson Vitor"} })
 })
-
-async function listarPresencas() {
-    const alunos = await Aluno.findAll()
-
-    return await Promise.all(alunos.map(async (aluno) => {
-        let presenca = await Presenca.findOne({ where: { alunoId: aluno.id } }) != null
-
-        return {
-            "id": aluno.id,
-            "nome": aluno.nome,
-            "presente_hoje": presenca,
-        }
-    }))
-}
 
 const app = express()
 app.use(express.json())
+app.use(cors())
 
-const port = 3000
+app.get("/presencas_do_dia", async (req, res) => {
+    const alunos = await Aluno.findAll()
 
-app.get('/presencas_do_dia', async (req, res) => {
-    res.send({ alunos: await listarPresencas() })
+    const result = await Promise.all(alunos.map(async (aluno) => {
+        const presence = await Presenca.findOne({where: {dia: Date.now(), alunoId: aluno.id}}) != null
+        return {
+            "id": aluno.id,
+            "nome": aluno.nome,
+            "presente_hoje": presence
+        }
+    }))
+
+    res.send({
+        "alunos": result
+    })
 })
 
 app.post("/marcar_presenca", async (req, res) => {
     const alunos_presentes = req.body.presencas
 
-    alunos_presentes.forEach((id) => {
-        Presenca.create({ dia: Date.now(), alunoId: id })
-    })
+    await Promise.all(alunos_presentes.map(async (id) => {
+        const params = { dia: Date.now(), alunoId: id }
+        await Presenca.findOrCreate({where: params, defaults: params})
+    }))
 
-    res.send({ alunos: await listarPresencas() })
+    res.send({})
 })
 
-app.listen(port, () => {
-    console.log(`Server running on port ${port}`)
+app.listen(3000, () => {
+    console.log("Server started on port 3000")
 })
