@@ -11,7 +11,7 @@
 
 <body>
     <script>
-        fetch('http://localhost:3000/presencas_do_dia').then(async (response) => {
+        fetch('/presencas_do_dia').then(async (response) => {
             const result = await response.json()
             const alunos = result.alunos
 
@@ -52,7 +52,7 @@
 
 
                 if (presencas.length > 0) {
-                    fetch('http://localhost:3000/marcar_presenca', {
+                    fetch('/marcar_presenca', {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
                         body: JSON.stringify({'presencas': presencas})
